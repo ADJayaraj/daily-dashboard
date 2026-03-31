@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dev Day Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <h1>⚡ Dev Day <span>Dashboard</span></h1>
+      <div style="color:var(--muted);font-size:.78rem;margin-top:4px;" id="headerSubtitle">10:00 → 18:00 · 8-hour focus plan</div>
+    </div>
+    <div class="header-right">
+      <div class="hours-config">
+        <label>START</label>
+        <select id="startHour" onchange="onHoursChange()"></select>
+        <span class="hours-sep">→</span>
+        <label>END</label>
+        <select id="endHour" onchange="onHoursChange()"></select>
+      </div>
+      <div class="clock-wrap" onclick="toggleClockMode()">
+        <div class="clock" id="liveClock">--:--:--</div>
+        <div class="clock-mode-label" id="clockModeLabel">CURRENT TIME · click to toggle</div>
+      </div>
+      <div class="date-display" id="liveDate">---</div>
+    </div>
+  </header>
+
+  <!-- Day progress -->
+  <div class="day-progress">
+    <span class="day-progress-label">DAY PROGRESS</span>
+    <div class="progress-bar-track"><div class="progress-bar-fill" id="dayProgressBar" style="width:0%"></div></div>
+    <span class="progress-pct" id="dayProgressPct">0%</span>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">Total Tasks</div><div class="stat-value yellow" id="statTotal">0</div></div>
+    <div class="stat-card"><div class="stat-label">Completed</div><div class="stat-value green"  id="statDone">0</div></div>
+    <div class="stat-card"><div class="stat-label">Time Left</div><div class="stat-value blue"   id="statTimeLeft">—</div></div>
+    <div class="stat-card"><div class="stat-label">Focus Time</div><div class="stat-value red"   id="statFocus">0m</div></div>
+  </div>
+
+  <!-- Active banner -->
+  <div class="active-banner" id="activeBanner">
+    <div>
+      <div class="active-banner-label">▶ NOW RUNNING</div>
+      <div class="active-banner-name" id="activeBannerName">—</div>
+    </div>
+    <div class="active-banner-timer" id="activeBannerTimer">--:--</div>
+  </div>
+
+  <!-- ── Dashboard Layout: Sidebar + Main ── -->
+  <div class="dashboard-layout">
+
+    <!-- Left Sidebar -->
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-inner">
+        <div class="sidebar-toggle" onclick="toggleSidebar()">
+          <span class="sidebar-toggle-label">PANELS</span>
+          <span class="sidebar-chevron" id="sidebarChevron">◀</span>
+        </div>
+        <div class="sidebar-stats">
+          <div class="sidebar-stats-title">Today at a glance</div>
+          <div class="sidebar-stats-grid">
+            <div class="stat-card"><div class="stat-label">Tasks</div><div class="stat-value yellow" id="sideStatTotal">0</div></div>
+            <div class="stat-card"><div class="stat-label">Done</div><div class="stat-value green" id="sideStatDone">0</div></div>
+            <div class="stat-card"><div class="stat-label">Left</div><div class="stat-value blue" id="sideStatTimeLeft">--</div></div>
+            <div class="stat-card"><div class="stat-label">Focus</div><div class="stat-value red" id="sideStatFocus">0m</div></div>
+          </div>
+        </div>
+        <div class="sidebar-nav" id="sidebarNav">
+          <button class="sidebar-btn" onclick="openProjectsModal()">
+            <span class="sb-icon">📁</span>
+            <span class="sb-label">Projects</span>
+            <span class="sb-count" id="sbProjectsCount">0</span>
+          </button>
+          <button class="sidebar-btn" onclick="openLogisticsModal()">
+            <span class="sb-icon">🗓</span>
+            <span class="sb-label">Logistics</span>
+            <span class="sb-count" id="sbLogisticsCount">0</span>
+          </button>
+          <button class="sidebar-btn" onclick="openObjectivesModal()">
+            <span class="sb-icon">🎯</span>
+            <span class="sb-label">Objectives</span>
+            <span class="sb-count" id="sbObjCount">0</span>
+          </button>
+          <button class="sidebar-btn" onclick="openHistoryModal()">
+            <span class="sb-icon">📚</span>
+            <span class="sb-label">History</span>
+            <span class="sb-count" id="sbHistCount">0</span>
+          </button>
+          <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">
+            <button class="sidebar-btn" onclick="printSummaryPdf()">
+              <span class="sb-icon">🖨</span>
+              <span class="sb-label">Print / PDF</span>
+            </button>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+
+      <!-- ── Horizontal Timeline ── -->
+      <div class="objectives-overview">
+        <div class="objectives-overview-header">
+          <div class="objectives-overview-title">
+            <span class="timeline-title">Objectives Snapshot</span>
+            <div class="objectives-overview-copy">Keep the north-star view on the page while planning the day. Each card shows the current priorities for that horizon.</div>
+          </div>
+          <div class="objectives-overview-actions">
+            <span class="objectives-overview-total" id="objOverviewTotal">0 objectives</span>
+            <button class="btn btn-reset btn-sm" onclick="openObjectivesModal()">Open / Edit Objectives</button>
+          </div>
+        </div>
+        <div class="objectives-overview-grid" id="objectivesOverviewGrid"></div>
+      </div>
+
+      <div class="timeline-section" id="timelineSection">
+        <div class="timeline-header">
+          <span class="timeline-title">⏱ Day Timeline</span>
+          <div class="timeline-legend" id="timelineLegend"></div>
+        </div>
+        <div class="timeline-scroll">
+          <div class="timeline-canvas" id="timelineCanvas">
+            <div class="tl-hour-marks" id="tlHourMarks"></div>
+            <div class="tl-track" id="tlTrack">
+              <div class="tl-now-line" id="tlNowLine" style="display:none"></div>
+            </div>
+          </div>
+        </div>
+        <div class="tl-unscheduled" id="tlUnscheduled"></div>
+      </div>
+
+      <!-- Add task bar -->
+      <div class="add-task-bar">
+        <input id="newTaskName" placeholder="Task name" />
+        <input id="newTaskTime" type="number" min="1" placeholder="Min" />
+        <select id="newTaskCat">
+          <option value="deep">🔥 Deep Work</option>
+          <option value="meeting">📞 Meeting</option>
+          <option value="review">🔍 Code Review</option>
+          <option value="admin">📬 Admin</option>
+          <option value="help">🤝 Help</option>
+          <option value="break">☕ Break</option>
+        </select>
+        <select id="newTaskProject">
+          <option value="">— No project —</option>
+        </select>
+        <select id="newTaskScheduled" title="Schedule on timeline">
+          <option value="">⏰ Unscheduled</option>
+        </select>
+        <button class="btn btn-add" onclick="addTask()">+ Add Task</button>
+      </div>
+
+      <div class="section-heading">Today's Schedule</div>
+      <div class="task-grid" id="taskGrid"></div>
+
+      <div class="gen-row">
+        <button class="btn btn-gen" onclick="openSummaryModal()">✦ Generate Day Summary</button>
+      </div>
+
+    </div><!-- /main-content -->
+  </div><!-- /dashboard-layout -->
+
+  <!-- Hidden compat elements (used by JS internals) -->
+  <div style="display:none">
+    <div id="projectGrid"></div>
+    <div id="projectsCount"></div>
+    <div id="logisticsGrid"></div>
+    <div id="logisticsCount"></div>
+    <div id="projectsBody"></div>
+    <div id="projectsChevron"></div>
+    <div id="logisticsBody"></div>
+    <div id="logisticsChevron"></div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ── Projects Modal ── -->
+<div class="panel-modal-backdrop" id="projectsModal">
+  <div class="panel-modal">
+    <div class="panel-modal-header">
+      <div class="panel-modal-title">📁 Projects <span id="pmProjectsCount" style="font-size:.72rem;font-family:'JetBrains Mono',monospace;color:var(--muted);background:var(--border);padding:2px 8px;border-radius:99px;font-weight:400;">0</span></div>
+      <button class="panel-modal-close" onclick="closeProjectsModal()">✕ Close</button>
+    </div>
+    <div class="panel-modal-body">
+      <div class="project-grid" id="pmProjectGrid"></div>
+      <div class="add-project-form">
+        <div class="form-title">+ New Project</div>
+        <div class="add-project-row">
+          <input class="inp-pname"    id="newProjName"    placeholder="Project name" />
+          <input class="inp-pdesc"    id="newProjDesc"    placeholder="Short description" />
+          <input class="inp-pmembers" id="newProjMembers" placeholder="Members (comma-sep)" />
+          <input class="inp-palloc"   id="newProjAlloc"   type="number" min="0.5" step="0.5" placeholder="hrs/day" />
+          <button class="btn btn-add btn-sm" onclick="addProject()">+ Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Logistics Modal ── -->
+<div class="panel-modal-backdrop" id="logisticsModal">
+  <div class="panel-modal">
+    <div class="panel-modal-header">
+      <div class="panel-modal-title">🗓 Daily Logistics <span id="pmLogisticsCount" style="font-size:.72rem;font-family:'JetBrains Mono',monospace;color:var(--muted);background:var(--border);padding:2px 8px;border-radius:99px;font-weight:400;">0</span></div>
+      <button class="panel-modal-close" onclick="closeLogisticsModal()">✕ Close</button>
+    </div>
+    <div class="panel-modal-body">
+      <div class="logistics-grid" id="pmLogisticsGrid"></div>
+      <div class="add-logistics-form">
+        <div class="form-title">+ New Logistics Item</div>
+        <div class="add-logistics-row">
+          <input class="inp-licon"  id="newLogIcon"  placeholder="☕ emoji" />
+          <input class="inp-lname"  id="newLogName"  placeholder="e.g. Lunch Break" />
+          <input class="inp-ltime"  id="newLogTime"  type="number" min="1" placeholder="Min" />
+          <button class="btn btn-add btn-sm" onclick="addLogisticsItem()">+ Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Summary modal -->
+<div class="modal-backdrop" id="summaryModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeSummaryModal()">✕ Close</button>
+    <div class="modal-header"><h2>✦ Day <span>Summary</span></h2></div>
+    <div class="modal-meta" id="summaryMeta"></div>
+    <div class="summary-sections" id="summarySections"></div>
+    <div class="modal-actions">
+      <button class="btn btn-copy" onclick="copySummary()">⎘ Copy as Text</button>
+    </div>
+  </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<!-- ── Fullscreen focus overlay ── -->
+<div class="fs-overlay" id="fsOverlay">
+  <div class="fs-main" id="fsMain">
+    <button class="fs-btn fs-btn-exit" onclick="exitFocus()">← Exit</button>
+    <button class="fs-notes-toggle" id="fsNotesToggle" onclick="toggleFsDrawer()">📝 Notes</button>
+
+    <span class="fs-cat-badge" id="fsCatBadge"></span>
+    <div class="fs-task-name" id="fsTaskName">—</div>
+    <div class="fs-proj-tag" id="fsProjTag"></div>
+
+    <div class="fs-timer" id="fsTimer">00:00</div>
+
+    <div class="fs-progress-wrap">
+      <div class="fs-progress-track"><div class="fs-progress-fill" id="fsProgressFill" style="width:0%"></div></div>
+      <div class="fs-progress-label" id="fsProgressLabel">0% complete</div>
+    </div>
+
+    <div class="fs-subtasks" id="fsSubtasks"></div>
+
+    <div class="fs-controls">
+      <button class="fs-btn fs-btn-pause" id="fsPauseBtn" onclick="fsPauseResume()">⏸ Pause</button>
+      <button class="fs-btn fs-btn-done"  onclick="fsDone()">✓ Done</button>
+    </div>
+  </div>
+
+  <!-- Notes drawer (slides in from right) -->
+  <div class="fs-drawer" id="fsDrawer">
+    <div class="fs-drawer-inner">
+      <div class="fs-drawer-title">📝 Notes</div>
+      <div class="fs-drawer-hint">Type · or ⌘V / Ctrl+V to paste a screenshot</div>
+      <div class="fs-drawer-editor" id="fsDrawerEditor"
+        contenteditable="true"
+        data-placeholder="Add notes, blockers, links…"
+        oninput="fsSaveNotes()"
+        onpaste="fsPasteHandler(event)"></div>
+    </div>
+  </div>
+</div>
+  <script src="index.js"></script>
+<!-- ── Objectives Modal ── -->
+<div class="panel-modal-backdrop" id="objectivesModal">
+  <div class="panel-modal" style="max-width:860px;">
+    <div class="panel-modal-header">
+      <div class="panel-modal-title">🎯 Objectives <span style="font-size:.72rem;font-family:'JetBrains Mono',monospace;color:var(--muted);background:var(--border);padding:2px 8px;border-radius:99px;font-weight:400;" id="pmObjCount">0</span></div>
+      <button class="panel-modal-close" onclick="closeObjectivesModal()">✕ Close</button>
+    </div>
+    <div class="panel-modal-body" id="objModalBody">
+      <div style="font-size:.8rem;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:12px 16px;line-height:1.6;">
+        🎯 Keep your north-star goals visible while planning your day. Add objectives at each level — they're here purely for inspiration and focus.
+      </div>
+      <div class="obj-tree" id="objTree"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── History Modal ── -->
+<div class="panel-modal-backdrop" id="historyModal">
+  <div class="panel-modal" style="max-width:860px;">
+    <div class="panel-modal-header">
+      <div class="panel-modal-title">📚 History <span style="font-size:.72rem;font-family:'JetBrains Mono',monospace;color:var(--muted);background:var(--border);padding:2px 8px;border-radius:99px;font-weight:400;" id="pmHistCount">0 days</span></div>
+      <button class="panel-modal-close" onclick="closeHistoryModal()">✕ Close</button>
+    </div>
+    <div class="panel-modal-body">
+      <div class="history-filters">
+        <button class="hist-filter-btn active" onclick="setHistFilter('week',this)">This Week</button>
+        <button class="hist-filter-btn" onclick="setHistFilter('month',this)">This Month</button>
+        <button class="hist-filter-btn" onclick="setHistFilter('all',this)">All Time</button>
+      </div>
+      <div class="history-report-bar">
+        <div class="hist-field">
+          <label for="histDateFrom">Date From</label>
+          <input id="histDateFrom" type="date" onchange="setHistReportFilter('from',this.value)">
+        </div>
+        <div class="hist-field">
+          <label for="histDateTo">Date To</label>
+          <input id="histDateTo" type="date" onchange="setHistReportFilter('to',this.value)">
+        </div>
+        <div class="hist-field">
+          <label for="histProjectFilter">Project</label>
+          <select id="histProjectFilter" onchange="setHistReportFilter('projectId',this.value)">
+            <option value="all">All projects</option>
+          </select>
+        </div>
+        <div class="hist-field">
+          <label for="histStatusFilter">Status</label>
+          <select id="histStatusFilter" onchange="setHistReportFilter('status',this.value)">
+            <option value="done">Done</option>
+            <option value="all">All statuses</option>
+            <option value="ready">Ready</option>
+            <option value="in_progress">In Progress</option>
+            <option value="carried_over">Carried Over</option>
+          </select>
+        </div>
+        <div class="hist-report-actions">
+          <button class="hist-report-btn" onclick="exportFilteredHistoryCsv()">Export CSV</button>
+          <button class="hist-report-btn" onclick="resetHistReportFilters()">Reset</button>
+        </div>
+      </div>
+      <div class="hist-report-summary" id="historyReportSummary"></div>
+      <div id="historyList"></div>
+    </div>
+  </div>
+</div>
+<div class="wiz-backdrop" id="wizBackdrop">
+  <div class="wiz-card">
+    <div class="wiz-progress"><div class="wiz-progress-fill" id="wizProgressFill" style="width:33%"></div></div>
+
+    <div class="wiz-steps" id="wizSteps">
+
+      <!-- Step 1: Work Hours -->
+      <div class="wiz-step" id="wizStep1">
+        <div class="wiz-step-num">Step 1 of 3</div>
+        <div class="wiz-step-title">Good morning! 👋<br>Work <span>Hours</span></div>
+        <div id="wizQuote" class="wiz-quote"></div>
+        <div class="wiz-step-sub">Set your start and end time for today.</div>
+        <div class="wiz-time-row">
+          <select id="wizStartHour"></select>
+          <span class="wiz-time-arrow">→</span>
+          <select id="wizEndHour"></select>
+          <span class="wiz-time-label" id="wizDurLabel"></span>
+        </div>
+      </div>
+
+      <!-- Step 2: Tasks -->
+      <div class="wiz-step" id="wizStep2">
+        <div class="wiz-step-num">Step 2 of 3</div>
+        <div class="wiz-step-title">Today's <span>Tasks</span></div>
+        <div class="wiz-step-sub">Pick how you want to load your tasks for today.</div>
+
+        <!-- Mode selector -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="wiz-mode-btn active" id="wizModeUpload" onclick="wizSetMode('upload')">⬆ Upload file</button>
+          <button class="wiz-mode-btn" id="wizModeType"   onclick="wizSetMode('type')">✏️ Type list</button>
+          <button class="wiz-mode-btn" id="wizModeManual" onclick="wizSetMode('manual')">➕ Add manually later</button>
+        </div>
+
+        <!-- Upload mode -->
+        <div id="wizModeUploadPanel" style="display:flex;flex-direction:column;gap:10px;">
+          <label class="wiz-upload-zone" id="wizDropZone" for="wizFileInput">
+            <div class="wiz-upload-zone-icon">📄</div>
+            <div class="wiz-upload-zone-text">Click to upload or drag & drop</div>
+            <div class="wiz-upload-zone-sub">tasks.txt · tasks.csv</div>
+          </label>
+          <input type="file" id="wizFileInput" accept=".txt,.csv" style="display:none" onchange="wizHandleFile(event)">
+          <div id="wizFileName" style="display:none"></div>
+          <button class="wiz-fmt-toggle" id="wizFmtToggle" onclick="toggleWizFmt()">? File format</button>
+          <div class="wiz-fmt-block" id="wizFmtBlock">
+            <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:8px;">Format</div>
+            <pre class="wiz-fmt-pre">Task name | 30 | deep
+Code Review | 45 | review | ProjectA
+Lunch Break | 45 | break</pre>
+            <div class="wiz-fmt-note">Columns: <em>name | minutes | category | project (optional)</em><br>Categories: <em>deep · meeting · review · admin · help · break</em></div>
+          </div>
+        </div>
+
+        <!-- Type mode -->
+        <div id="wizModeTypePanel" style="display:none;flex-direction:column;gap:8px;">
+          <div style="font-size:.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:6px;">One task per line: <em style="color:var(--accent)">name | minutes | category | project</em></div>
+          <textarea id="wizTypeArea"
+            placeholder="Deep Coding Block | 120 | deep&#10;Code Review | 45 | review | ProjectA&#10;Lunch Break | 45 | break&#10;Meetings | 60 | meeting"
+            style="width:100%;min-height:160px;background:var(--bg);border:1px solid var(--border);color:var(--accent2);border-radius:9px;padding:12px;font-family:'JetBrains Mono',monospace;font-size:.8rem;line-height:1.7;outline:none;resize:vertical;"
+            oninput="wizParseTyped()"
+          ></textarea>
+        </div>
+
+        <!-- Manual mode -->
+        <div id="wizModeManualPanel" style="display:none">
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:18px 20px;text-align:center;">
+            <div style="font-size:1.6rem;margin-bottom:8px;">✅</div>
+            <div style="font-weight:700;margin-bottom:4px;">No problem — you can add tasks on the dashboard.</div>
+            <div style="font-size:.82rem;color:var(--muted);">Use the Add Task bar or import a file at any time.</div>
+          </div>
+        </div>
+
+        <!-- Parsed task preview (shared by upload + type modes) -->
+        <div id="wizTaskPreview" class="wiz-task-preview" style="display:none"></div>
+      </div>
+
+      <!-- Step 3: Confirm -->
+      <div class="wiz-step" id="wizStep3">
+        <div class="wiz-step-num">Step 3 of 3</div>
+        <div class="wiz-step-title">All set. <span>Let's go.</span></div>
+        <div class="wiz-step-sub">Here's your day at a glance. Hit Start to open the dashboard.</div>
+        <div id="wizSummaryBlock" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </div>
+
+      <!-- Carryover slide (shown as step 2 when yesterday's tasks exist) -->
+      <div class="wiz-step" id="wizStepCarryover">
+        <div class="wiz-step-num">Step 2 of 4</div>
+        <div class="wiz-step-title">Yesterday's <span>Tasks</span></div>
+        <div class="wiz-step-sub">These tasks weren't completed yesterday. Pick what to carry into today.</div>
+        <div class="wiz-carryover-list" id="wizCarryoverList"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="wiz-mode-btn active" style="font-size:.76rem;padding:6px 12px;" onclick="wizSelectAllCarry(true)">☑ Select all</button>
+          <button class="wiz-mode-btn"        style="font-size:.76rem;padding:6px 12px;" onclick="wizSelectAllCarry(false)">☐ Deselect all</button>
+        </div>
+      </div>
+
+    </div><!-- /wiz-steps -->
+
+    <div class="wiz-footer">
+      <div class="wiz-footer-left" id="wizFooterLabel">Step 1 of 3</div>
+      <div class="wiz-footer-btns">
+        <button class="wiz-btn wiz-btn-back"  id="wizBackBtn"  onclick="wizBack()"   style="display:none">← Back</button>
+        <button class="wiz-btn wiz-btn-next"  id="wizNextBtn"  onclick="wizNext()">Next →</button>
+        <button class="wiz-btn wiz-btn-start" id="wizStartBtn" onclick="wizFinish()" style="display:none">🚀 Start Day</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
